@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@sapphire/snowflake": "^3.5.5",
+    "@twurple/api": "^7.2.0",
+    "@twurple/auth": "^7.2.0",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "reflect-metadata": "^0.2.2",
