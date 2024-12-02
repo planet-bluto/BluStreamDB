@@ -1,0 +1,1 @@
+export type ChargeType = "bolta" | "codec" | "malo" | "muse" | "visu"
