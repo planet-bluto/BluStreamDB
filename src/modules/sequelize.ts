@@ -29,8 +29,8 @@ sequelize.sync()
 
 // UTILITIES ////////////////////////////////////////////////////////////////
 
-export async function resolveChatter(chatterId: number) {
-  let thisChatter = await Chatter.findOne({where: {id: chatterId}})
+export async function resolveChatter(chatterId: string) {
+  let thisChatter = await Chatter.findByPk(chatterId)
   if (!thisChatter) {
     let user = await apiClient.users.getUserById(chatterId)
     if (user) {

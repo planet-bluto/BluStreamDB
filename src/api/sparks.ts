@@ -7,6 +7,39 @@ import { telemetry } from "../modules/telemetry";
 import { ChargePresets } from "../types/charge_presets";
 import { resolveChatter } from "../modules/sequelize";
 
+// dawg this is one of the worst fucking functions I've ever had to write
+function resolveCharge(charge: null | string | object): (null | {type: string, amount: number}) {
+  if (typeof(charge) == "string") {
+    charge = (ChargePresets[charge] || null)
+  } else if (charge instanceof Object && (!Object.keys(charge).includes("type") || !Object.keys(charge).includes("amount"))) {
+    charge = null
+  }
+
+  return (charge as (null | {type: string, amount: number}))
+}
+
+async function resolveSpark(id: string, making: boolean = false) {
+  let thisSpark: null | Spark = await Spark.findByPk(id)
+  if (!thisSpark) {
+    let chatter = await resolveChatter(id)
+    if (!chatter) { return null }
+
+    let sparks = await chatter.$get("sparks")
+
+    if (sparks.length > 0) {
+      thisSpark = (sparks[sparks.length-1] || null)
+    } else if (making) {
+      thisSpark = await Spark.create({
+        chatterId: chatter.id
+      })
+    }
+  }
+
+  if (thisSpark) { thisSpark.reload({include: [Chatter, Charge, Stream]}) }
+
+  return thisSpark
+}
+
 Pointer.unauth.GET("/sparks", async (req, res) => {
   let sparks = await Promise.all((await Spark.findAll({include: [Chatter, Charge, Stream]})).map(async (spark) => {
     let jsonSpark = await spark.toCleanJSON()
@@ -19,7 +52,7 @@ Pointer.unauth.GET("/sparks", async (req, res) => {
 Pointer.unauth.GET("/sparks/:id", async (req, res) => {
   let sparkId = req.params.id
 
-  let thisSpark = await Spark.findByPk(sparkId, {include: [Chatter, Charge, Stream]})
+  let thisSpark = await resolveSpark(sparkId)
   if (thisSpark) {
     return (await thisSpark?.toCleanJSON())
   } else {
@@ -40,9 +73,7 @@ Pointer.auth.POST("/sparks", async (req, res) => {
   await payload.charges.awaitForEach(async (charge: any) => {
     let preset = charge
 
-    if (typeof(charge) == "string") {
-      charge = (ChargePresets[charge] || null)
-    }
+    charge = resolveCharge(charge)
 
     if (charge) {
       let newCharge = await Charge.create({
@@ -64,12 +95,39 @@ Pointer.auth.POST("/sparks", async (req, res) => {
 Pointer.auth.DELETE("/sparks/:id", async (req, res) => {
   let sparkId = req.params.id
 
-  let thisSpark = await Spark.findByPk(sparkId, {include: [Chatter, Charge, Stream]})
+  let thisSpark = await resolveSpark(sparkId)
   if (thisSpark) {
     let toReturn = (await thisSpark?.toCleanJSON())
     await thisSpark.destroy()
 
     return toReturn
+  } else {
+    return Error("Invalid ID")
+  }
+})
+
+Pointer.auth.PUT("/sparks/:id", async (req, res) => {
+  let sparkId = req.params.id
+  let payload = req.body
+  let errors: object[] = []
+
+  let thisSpark = await resolveSpark(sparkId, true)
+  if (thisSpark) {
+    await payload.awaitForEach(async (charge: string | object, index: number) => {
+      let resolvedCharge = resolveCharge(charge)
+
+      if (resolvedCharge) {
+        await Charge.create({
+          sparkId: thisSpark.id,
+          type: resolvedCharge.type,
+          amount: resolvedCharge.amount
+        })
+      } else {
+        errors.push({message: "Invalid charge parameter", index})
+      }
+    })
+
+    return {spark: (await thisSpark.toCleanJSON()), errors}
   } else {
     return Error("Invalid ID")
   }
