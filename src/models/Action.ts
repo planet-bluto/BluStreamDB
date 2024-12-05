@@ -21,12 +21,12 @@ export default class Action extends Model {
 
 
 
-  @BelongsTo(() => Chatter)
+  @BelongsTo(() => Chatter, {onDelete: "CASCADE", onUpdate: "CASCADE", hooks: true})
   chatter: Chatter;
 
 
 
-  @BelongsToMany(() => Stream, () => ActionStream)
+  @BelongsToMany(() => Stream, {through: () => ActionStream, onDelete: "CASCADE", onUpdate: "CASCADE", hooks: true})
   streams: Stream[];
 
 

@@ -1,33 +1,26 @@
-import express, { Request, Response, Router } from 'express';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
+import { Snowflake } from '@sapphire/snowflake';
+import express, { Request, Response } from 'express';
 
-type ExpressParams = (req: Request, res: Response) => void
+import { app } from "./server"
+import { dropEvents, flushEvents } from './socket';
 
-const app = express()
-const httpServer = createServer(app)
+type ExpressParams = (req: Request, res: Response, rid: string) => void
 
-const SocketIO = new Server(httpServer, {
-  cors: {
-    origin: '*', // Replace with your client's origin
-    methods: ['*'],
-  },
-})
-
-SocketIO.on('connection', (socket) => {})
-
-app.use(express.json())
+const snowflake = new Snowflake(SNOWFLAKE_EPOCH);
 
 function base_enpoint(method: ("get" | "post" | "patch" | "put" | "delete"), auth: boolean, path: string, func: ExpressParams) {
   app[method](path, async (req: Request, res: Response) => {
+    let rid = String(snowflake.generate())
     let token = req.header("Authorization")?.split(" ")[1]
     if (auth == false || (auth == true && (token == process.env.WEB_TOKEN))) {
-      let returnVal: any = await func(req, res)
+      let returnVal: any = await func(req, res, rid)
       if (returnVal != null && !(returnVal instanceof Error)) {
         res.json(returnVal)
+        flushEvents(rid)
       } else if (returnVal instanceof Error) {
         res.statusCode = 400
         res.json({error: returnVal.message})
+        dropEvents(rid)
       }
     } else {
       res.statusCode = 401
@@ -61,10 +54,4 @@ Pointer.unauth.GET("/", (req, res) => {
 
 Pointer.auth.GET("/", (req, res) => {
   res.json({ api_version: "v1" })
-})
-
-
-
-httpServer.listen(process.env.WEB_PORT, () => {
-  print("Web Server Listening...")
 })

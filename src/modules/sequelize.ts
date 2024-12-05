@@ -32,7 +32,14 @@ sequelize.sync()
 export async function resolveChatter(chatterId: string) {
   let thisChatter = await Chatter.findByPk(chatterId)
   if (!thisChatter) {
-    let user = await apiClient.users.getUserById(chatterId)
+    let user = null
+
+    try {
+      user = await apiClient.users.getUserById(chatterId)
+    } catch(err) {
+      // ...
+    }
+    
     if (user) {
       telemetry("WEB", `Chatter (${user.id}) didn't exist, so we made it`)
 

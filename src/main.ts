@@ -12,7 +12,7 @@ import "./lib/arrayLib.js"
 
 // Modules?
 import "./modules/sequelize"
-import "./modules/express"
+import "./modules/server"
 import "./modules/twitch"
 
 // API

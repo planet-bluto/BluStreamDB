@@ -1,5 +1,7 @@
 import { ChargeType } from "./charge_type";
 
+export const EVOLVE_AMOUNT = 240
+
 export const ChargePresets: {[index: string]: {type: ChargeType, amount: number}} = {
   CHAT: {type: "bolta", amount: 1},
   CHARGE: {type: "bolta", amount: 24},

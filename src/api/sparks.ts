@@ -18,19 +18,20 @@ function resolveCharge(charge: null | string | object): (null | {type: string, a
   return (charge as (null | {type: string, amount: number}))
 }
 
-async function resolveSpark(id: string, making: boolean = false) {
+async function resolveSpark(id: string, rid: string, making: boolean = false) {
   let thisSpark: null | Spark = await Spark.findByPk(id)
   if (!thisSpark) {
     let chatter = await resolveChatter(id)
     if (!chatter) { return null }
 
     let sparks = await chatter.$get("sparks")
+    sparks.reverse()
 
-    if (sparks.length > 0) {
-      thisSpark = (sparks[sparks.length-1] || null)
-    } else if (making) {
+    thisSpark = (sparks.find(spark => (spark.evolved == false)) || null)
+    if (thisSpark == null && making) {
       thisSpark = await Spark.create({
-        chatterId: chatter.id
+        chatterId: chatter.id,
+        requestId: rid
       })
     }
   }
@@ -49,10 +50,10 @@ Pointer.unauth.GET("/sparks", async (req, res) => {
   return sparks
 })
 
-Pointer.unauth.GET("/sparks/:id", async (req, res) => {
+Pointer.unauth.GET("/sparks/:id", async (req, res, rid) => {
   let sparkId = req.params.id
 
-  let thisSpark = await resolveSpark(sparkId)
+  let thisSpark = await resolveSpark(sparkId, rid)
   if (thisSpark) {
     return (await thisSpark?.toCleanJSON())
   } else {
@@ -60,7 +61,7 @@ Pointer.unauth.GET("/sparks/:id", async (req, res) => {
   }
 })
 
-Pointer.auth.POST("/sparks", async (req, res) => {
+Pointer.auth.POST("/sparks", async (req, res, rid) => {
   let payload = req.body
 
   let thisChatter = await resolveChatter(payload.chatterId)
@@ -68,6 +69,7 @@ Pointer.auth.POST("/sparks", async (req, res) => {
     
   let newSpark = await Spark.create({
     chatterId: payload.chatterId,
+    requestId: rid
   })
 
   await payload.charges.awaitForEach(async (charge: any) => {
@@ -78,6 +80,7 @@ Pointer.auth.POST("/sparks", async (req, res) => {
     if (charge) {
       let newCharge = await Charge.create({
         sparkId: newSpark.id,
+        requestId: rid,
         type: charge.type,
         amount: charge.amount
       })
@@ -92,11 +95,13 @@ Pointer.auth.POST("/sparks", async (req, res) => {
   return jsonSpark
 })
 
-Pointer.auth.DELETE("/sparks/:id", async (req, res) => {
+Pointer.auth.DELETE("/sparks/:id", async (req, res, rid) => {
   let sparkId = req.params.id
 
-  let thisSpark = await resolveSpark(sparkId)
+  let thisSpark = await resolveSpark(sparkId, rid)
   if (thisSpark) {
+    await thisSpark.update({requestId: rid})
+
     let toReturn = (await thisSpark?.toCleanJSON())
     await thisSpark.destroy()
 
@@ -106,12 +111,12 @@ Pointer.auth.DELETE("/sparks/:id", async (req, res) => {
   }
 })
 
-Pointer.auth.PUT("/sparks/:id", async (req, res) => {
+Pointer.auth.PUT("/sparks/:id", async (req, res, rid) => {
   let sparkId = req.params.id
   let payload = req.body
   let errors: object[] = []
 
-  let thisSpark = await resolveSpark(sparkId, true)
+  let thisSpark = await resolveSpark(sparkId, rid, true)
   if (thisSpark) {
     await payload.awaitForEach(async (charge: string | object, index: number) => {
       let resolvedCharge = resolveCharge(charge)
@@ -119,6 +124,7 @@ Pointer.auth.PUT("/sparks/:id", async (req, res) => {
       if (resolvedCharge) {
         await Charge.create({
           sparkId: thisSpark.id,
+          requestId: rid,
           type: resolvedCharge.type,
           amount: resolvedCharge.amount
         })
