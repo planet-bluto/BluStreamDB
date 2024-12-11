@@ -18,7 +18,7 @@ function resolveCharge(charge: null | string | object): (null | {type: string, a
   return (charge as (null | {type: string, amount: number}))
 }
 
-async function resolveSpark(id: string, rid: string, making: boolean = false) {
+async function resolveSpark(id: string, rid: string, making: boolean = false, streamId: string = "") {
   let thisSpark: null | Spark = await Spark.findByPk(id)
   if (!thisSpark) {
     let chatter = await resolveChatter(id)
@@ -33,6 +33,8 @@ async function resolveSpark(id: string, rid: string, making: boolean = false) {
         chatterId: chatter.id,
         requestId: rid
       })
+
+      await thisSpark.$add("streams", streamId)
     }
   }
 
@@ -116,14 +118,18 @@ Pointer.auth.PUT("/sparks/:id", async (req, res, rid) => {
   let payload = req.body
   let errors: object[] = []
 
-  let thisSpark = await resolveSpark(sparkId, rid, true)
+  let thisStream = await Stream.findByPk(payload.streamId)
+  if (thisStream == null) { return Error("Invalid Stream ID") }
+
+  let thisSpark = await resolveSpark(sparkId, rid, true, thisStream.id)
   if (thisSpark) {
-    await payload.awaitForEach(async (charge: string | object, index: number) => {
+    await payload.charges.awaitForEach(async (charge: string | object, index: number) => {
       let resolvedCharge = resolveCharge(charge)
 
       if (resolvedCharge) {
         await Charge.create({
           sparkId: thisSpark.id,
+          streamId: thisStream.id,
           requestId: rid,
           type: resolvedCharge.type,
           amount: resolvedCharge.amount

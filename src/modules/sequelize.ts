@@ -4,6 +4,8 @@ import { Sequelize } from "sequelize-typescript";
 import Chatter from "../models/Chatter";
 import { telemetry } from "./telemetry";
 import { apiClient } from "./twitch";
+import Spark from "../models/Spark";
+import Stream from "../models/Stream";
 
 const ROOT_PATH = path.join(__dirname, "..", )
 const DB_PATH = path.join(ROOT_PATH, "..", "db", "main.sqlite")
@@ -31,7 +33,7 @@ sequelize.sync()
 
 export async function resolveChatter(chatterId: string) {
   let thisChatter = await Chatter.findByPk(chatterId)
-  if (!thisChatter) {
+  if (thisChatter == null) {
     let user = null
 
     try {
@@ -51,5 +53,5 @@ export async function resolveChatter(chatterId: string) {
     }
   }
 
-  return thisChatter
+  return (await thisChatter?.reload({include: [Spark, Stream]}))
 }

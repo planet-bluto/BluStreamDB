@@ -19,6 +19,7 @@ import "./modules/twitch"
 import "./api/sparks"
 import "./api/chatters"
 import "./api/activity"
+import "./api/streams"
 
 telemetry("MAIN", "Hai! :3")
 

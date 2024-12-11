@@ -11,7 +11,6 @@ import ChargeStream from './ChargeStream';
 import Chatter from './Chatter';
 
 import { SocketIO } from '../modules/server';
-// import request from 'sync-request';
 import { pushEvent } from '../modules/socket';
 import { EVOLVE_AMOUNT } from '../types/charge_presets';
 
@@ -34,8 +33,12 @@ export default class Charge extends Model {
 
 
 
-  @BelongsToMany(() => Stream, {through: () => ChargeStream, onDelete: "CASCADE", onUpdate: "CASCADE", hooks: true})
-  streams: Stream[];
+  @ForeignKey(() => Stream)
+  @Column
+  streamId: string;
+
+  @BelongsTo(() => Stream, {onDelete: "CASCADE", onUpdate: "CASCADE", hooks: true})
+  stream: Stream;
   
 
 

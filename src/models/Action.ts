@@ -1,5 +1,5 @@
 import { Snowflake } from '@sapphire/snowflake';
-import { Table, Column, Model, BelongsTo, ForeignKey, BelongsToMany } from 'sequelize-typescript';
+import { Table, Column, Model, BelongsTo, ForeignKey, BelongsToMany, DataType } from 'sequelize-typescript';
 
 import Chatter from './Chatter';
 import Stream from './Stream';
@@ -19,15 +19,17 @@ export default class Action extends Model {
   @Column
   chatterId: string;
 
-
-
   @BelongsTo(() => Chatter, {onDelete: "CASCADE", onUpdate: "CASCADE", hooks: true})
   chatter: Chatter;
 
 
 
-  @BelongsToMany(() => Stream, {through: () => ActionStream, onDelete: "CASCADE", onUpdate: "CASCADE", hooks: true})
-  streams: Stream[];
+  @ForeignKey(() => Stream)
+  @Column
+  streamId: string;
+
+  @BelongsTo(() => Stream, {onDelete: "CASCADE", onUpdate: "CASCADE", hooks: true})
+  stream: Stream;
 
 
 
@@ -36,6 +38,6 @@ export default class Action extends Model {
 
 
 
-  @Column
-  data: string;
+  @Column( DataType.JSON )
+  data: object;
 }

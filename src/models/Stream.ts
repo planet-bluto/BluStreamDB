@@ -24,18 +24,16 @@ export default class Stream extends Model {
   active_chatters: Chatter[];
 
 
-
-  @BelongsToMany(() => Action, {through: () => ActionStream, onDelete: "CASCADE", onUpdate: "CASCADE", hooks: true})
-  activity: Action[];
-
-
   
   @BelongsToMany(() => Spark, {through: () => SparkStream, onDelete: "CASCADE", onUpdate: "CASCADE", hooks: true})
   sparks: Spark[];
 
 
 
-  @BelongsToMany(() => Charge, {through: () => ChargeStream, onDelete: "CASCADE", onUpdate: "CASCADE", hooks: true})
-  charges: Array<Charge & {ChargeStream: ChargeStream}>;
-  // charges: Charge[];
+  @HasMany(() => Charge, "streamId")
+  charges: Charge[];
+
+
+  @HasMany(() => Action, "streamId")
+  activity: Action[];
 }

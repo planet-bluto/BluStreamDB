@@ -11,7 +11,7 @@ export const ChargePresets: {[index: string]: {type: ChargeType, amount: number}
   BB_PROMPT: {type: "codec", amount: 24},
   BB_SAY: {type: "codec", amount: 6},
   BB_BUMPER: {type: "codec", amount: 2},
-  BUMPER_SUBMIT: {type: "visu", amount: 80},
+  SUBMIT_BUMPER: {type: "visu", amount: 80},
   POPUP_ROULETTE: {type: "malo", amount: 24},
   POPUP_AD: {type: "malo", amount: 12},
 }

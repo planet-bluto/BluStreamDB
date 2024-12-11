@@ -4,6 +4,9 @@ import express, { Request, Response } from 'express';
 import { app } from "./server"
 import { dropEvents, flushEvents } from './socket';
 
+const TaskManager = require("task-manager")
+const Queue = new TaskManager()
+
 type ExpressParams = (req: Request, res: Response, rid: string) => void
 
 const snowflake = new Snowflake(SNOWFLAKE_EPOCH);
@@ -13,7 +16,7 @@ function base_enpoint(method: ("get" | "post" | "patch" | "put" | "delete"), aut
     let rid = String(snowflake.generate())
     let token = req.header("Authorization")?.split(" ")[1]
     if (auth == false || (auth == true && (token == process.env.WEB_TOKEN))) {
-      let returnVal: any = await func(req, res, rid)
+      let returnVal: any = await (Queue.add(async () => { return func(req, res, rid) }))
       if (returnVal != null && !(returnVal instanceof Error)) {
         res.json(returnVal)
         flushEvents(rid)

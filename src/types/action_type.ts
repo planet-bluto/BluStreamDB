@@ -1,1 +1,1 @@
-export type ActionType = ("chat")
+export type ActionType = ("chat" | "song_like")

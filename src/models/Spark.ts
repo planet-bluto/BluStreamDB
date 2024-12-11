@@ -15,9 +15,9 @@ import { EVOLVE_AMOUNT } from '../types/charge_presets';
 
 @Table
 export default class Spark extends Model {
-  @Default(String(snowflake.generate()))
+  // @Default()
   @Column({ primaryKey: true })
-  id: string;
+  id: string = String(snowflake.generate());
 
   @Column
   requestId: string;

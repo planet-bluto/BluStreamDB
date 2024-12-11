@@ -9,6 +9,11 @@ import ChatterStream from './ChatterStream';
 export default class Chatter extends Model {
   @Column({ primaryKey: true })
   id: string;
+
+
+
+  @Column
+  popup: string;
   
   
 

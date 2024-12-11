@@ -18,7 +18,8 @@
     "sequelize": "^6.37.5",
     "sequelize-typescript": "^2.1.6",
     "socket.io": "^4.8.1",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "task-manager": "https://github.com/planet-bluto/task-manager.git"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
