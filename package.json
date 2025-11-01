@@ -5,6 +5,7 @@
   "author": "Blu <plush.gamer.456@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "build": "tsc --build",
     "start": "ts-node src/main.ts",
     "dev": "nodemon --exec ts-node src/main.ts"
   },
